@@ -55,6 +55,12 @@ linters:
           - err113
           - forcetypeassert
           - gosec
+      # Build tools print their errors and exit, so sentinel errors buy
+      # nothing, and their JSON tags have to mirror the schemas they read.
+      - path: internal/gen/
+        linters:
+          - err113
+          - tagliatelle
 formatters:
   enable:
     - gofmt
