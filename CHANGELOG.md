@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-08-11
+
+### Added
+
+- A `holiday` subpackage that answers whether a Persian date is a public
+  holiday and what is commemorated on it: `Iran()`, `Calendar.Lookup`,
+  `IsHoliday`, `IsWorkday`, `Events`, `Holidays`, `NextHoliday`, `NextWorkday`
+  and `Workdays`.
+- Every occurrence carries a `Confidence`. Days fixed in the Persian calendar
+  are always `Confirmed`; days fixed in the Hijri calendar are `Estimated`
+  until their year has passed and the announced date has been recorded, because
+  Iran determines them by moon sighting. Measured against 31 years of published
+  calendars, the arithmetic Hijri calendar disagrees with the announced date
+  43% of the time, almost always by one day — so the flag is not a formality.
+- `holiday.Load` and `Calendar.WithOverrides` load a fresher copy of the data
+  at runtime, for services that cannot rebuild to pick up a correction. The
+  file is published at
+  https://amiranmanesh.github.io/go-persian-calendar/data/v1/iran.json
+- Bundled data covering Persian years 1390 to 1420, embedded at build time so
+  the package performs no I/O and works offline.
+- A monthly workflow reconciles the computed calendar against published Iranian
+  calendars and opens a pull request when a date moves, so data changes are
+  reviewed rather than applied silently.
+
+### Changed
+
+- Calendar conversions moved to an internal `jdn` package, shared by `ptime`
+  and `holiday`. The public API of `ptime` is unchanged.
+- The internal Julian Day machinery gained tabular Hijri conversions.
+
 ## [1.4.0] - 2026-08-11
 
 First release published under `github.com/amiranmanesh/go-persian-calendar`. Earlier
@@ -73,5 +103,6 @@ see **Fixed** below for the details.
 - `Month.String`, `Weekday.String` and `AmPm.Short` clamped through overlapping
   bounds checks; the behavior is unchanged but the intent is now explicit.
 
-[Unreleased]: https://github.com/amiranmanesh/go-persian-calendar/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/amiranmanesh/go-persian-calendar/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/amiranmanesh/go-persian-calendar/releases/tag/v1.5.0
 [1.4.0]: https://github.com/amiranmanesh/go-persian-calendar/releases/tag/v1.4.0

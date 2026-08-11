@@ -267,7 +267,47 @@
         <h3>Exact conversions</h3>
         <p>Every conversion goes through the Julian Day Number, so it stays correct on both sides of the 1582 Gregorian reform.</p>
       </div>
+      <div class="card">
+        <h3>Public holidays</h3>
+        <p>An optional <code>holiday</code> package answers whether a date is a day off — and says so when a lunar date is still an estimate.</p>
+      </div>
     </div>
+  </div>
+</section>
+
+<section id="holidays">
+  <div class="wrap">
+    <h2>Public holidays, honestly</h2>
+    <p class="section-lead">Iran fixes lunar holidays by moon sighting. No algorithm can predict that, so the package does not pretend otherwise.</p>
+
+    <pre><code>import "github.com/amiranmanesh/go-persian-calendar/holiday"
+
+cal := holiday.Iran()
+
+cal.IsHoliday(pt)      // is this a day off, Fridays included?
+cal.Lookup(pt).Title() // روز طبیعت، سیزده به‌در
+cal.NextWorkday(pt)    // the next working day
+cal.Workdays(from, to) // working days in a range</code></pre>
+
+    <div class="grid" style="margin-top:20px">
+      <div class="card">
+        <h3>Solar — always exact</h3>
+        <p>Nowruz, 22 Bahman, 13 Farvardin. Fixed by law, expressed as rules in code, correct forever. Reported as <code>Confirmed</code>.</p>
+      </div>
+      <div class="card">
+        <h3>Lunar — flagged until settled</h3>
+        <p>Eid al-Fitr, Ashura, Arbaeen. The arithmetic calendar disagrees with the announced date <strong>43%</strong> of the time, so an unsettled year is reported as <code>Estimated</code>.</p>
+      </div>
+      <div class="card">
+        <h3>One-off — data only</h3>
+        <p>An air pollution closure or an election cannot be predicted at all. A monthly workflow reconciles them and opens a pull request for review.</p>
+      </div>
+    </div>
+
+    <p style="margin-top:20px; color:var(--fg-muted)">
+      The data is embedded at build time, so the package does no I/O. The same file is served at
+      <a href="data/v1/iran.json"><code>/data/v1/iran.json</code></a> for runtime reloads and non-Go consumers.
+    </p>
   </div>
 </section>
 

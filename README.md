@@ -26,6 +26,7 @@
 - **Ready for JSON and SQL** — implements `json.Marshaler`, `encoding.TextMarshaler`, `driver.Valuer` and `sql.Scanner`.
 - **Iranian and Dari names** — Dari month names are selected automatically for the `Asia/Kabul` location.
 - **Calendar helpers** — leap years, week of month, week of year, first and last day of the week, month and year.
+- **Public holidays** — the optional [`holiday`](#public-holidays) package answers whether a date is a day off, and says so honestly when a lunar date is still an estimate.
 - **Zero dependencies**, allocation-conscious formatting, and a fuzz-tested parser.
 
 ## Installation
@@ -132,6 +133,58 @@ var at ptime.Time
 db.QueryRow("SELECT created_at FROM events WHERE id = $1", id).Scan(&at)
 db.Exec("INSERT INTO events (created_at) VALUES ($1)", at)
 ```
+
+## Public holidays
+
+```go
+import "github.com/amiranmanesh/go-persian-calendar/holiday"
+
+cal := holiday.Iran()
+
+cal.IsHoliday(pt)                 // is this a day off, Fridays included?
+cal.Lookup(pt).Title()            // "روز طبیعت، سیزده به‌در"
+cal.NextWorkday(pt)               // the next working day
+cal.Workdays(from, to)            // working days in a range
+cal.Holidays(1404)                // every day off in a year
+```
+
+Iranian holidays come in three kinds, and the package treats each one honestly:
+
+| Kind | Example | How it is resolved | Confidence |
+|------|---------|--------------------|------------|
+| Fixed in the Persian calendar | Nowruz, 22 Bahman | a rule in code, set by law | always `Confirmed` |
+| Fixed in the Hijri calendar | Eid al-Fitr, Ashura | computed through the tabular Hijri calendar | `Estimated` until the year is settled |
+| One-off | an air pollution closure | data only | `Confirmed` |
+
+Iran fixes lunar dates by moon sighting, which no algorithm can predict: the
+arithmetic calendar disagrees with the announced date about **43% of the time**,
+almost always by a single day. So a lunar occurrence is reported as `Estimated`
+until its year has passed and the announced date is recorded:
+
+```go
+for _, event := range cal.Lookup(pt).Events {
+    if event.Confidence == holiday.Estimated {
+        // Do not settle payroll on this date yet.
+    }
+}
+
+cal.ConfirmedThrough() // the last year whose lunar dates are settled
+```
+
+The data is embedded at build time, so the package does no I/O and works
+offline. `go get -u` brings newer data. A service that must pick up a correction
+without rebuilding can load a fresher copy of the same file:
+
+```go
+resp, err := http.Get("https://amiranmanesh.github.io/go-persian-calendar/data/v1/iran.json")
+// ...
+overrides, err := holiday.Load(resp.Body)
+cal = holiday.Iran().WithOverrides(overrides)
+```
+
+A monthly workflow reconciles the computed calendar against published Iranian
+calendars and opens a pull request when a date moves, so every change to the
+data is reviewed rather than applied silently.
 
 ## Predefined layouts
 
