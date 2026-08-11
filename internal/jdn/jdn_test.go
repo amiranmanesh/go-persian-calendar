@@ -1,5 +1,5 @@
-//nolint:testpackage
-package ptime
+//nolint:testpackage // these tests exercise unexported conversion helpers
+package jdn
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ func TestCalculateJDNToGregorian(t *testing.T) {
 	for _, tc := range julianToGregorianMapping {
 		t.Run(fmt.Sprintf("%d/%d/%d", tc.gregorianDate.year, tc.gregorianDate.month, tc.gregorianDate.day), func(t *testing.T) {
 			// Calculate JDN from the Gregorian testDate
-			calculatedJDN := gregorianPostReformToJDN(tc.gregorianDate.year, tc.gregorianDate.month, tc.gregorianDate.day)
+			calculatedJDN := fromGregorianPostReform(tc.gregorianDate.year, tc.gregorianDate.month, tc.gregorianDate.day)
 
 			// Compare the calculated JDN with the expected JDN
 			if calculatedJDN != tc.julianDay {
@@ -25,7 +25,7 @@ func TestCalculateGregorianToJDN(t *testing.T) {
 	for _, tc := range julianToGregorianMapping {
 		t.Run(fmt.Sprintf("%d/%d/%d", tc.gregorianDate.year, tc.gregorianDate.month, tc.gregorianDate.day), func(t *testing.T) {
 			// calculate shamsi testDate by jdn
-			year, month, day := jdnToGregorianPostReform(tc.julianDay)
+			year, month, day := toGregorianPostReform(tc.julianDay)
 
 			if year != tc.gregorianDate.year {
 				t.Errorf("Test failed for testDate %d: expected Year %d, got %d\n", tc.julianDay, tc.gregorianDate.year, year)
@@ -46,7 +46,7 @@ func TestCalculateJDNToShamsi(t *testing.T) {
 	for _, tc := range julianToShamsiMapping {
 		t.Run(fmt.Sprintf("%d/%d/%d", tc.shamsiDate.year, tc.shamsiDate.month, tc.shamsiDate.day), func(t *testing.T) {
 			// calculate shamsi testDate by jdn
-			year, month, day := jdnToPersian(tc.julianDay)
+			year, month, day := ToPersian(tc.julianDay)
 
 			if year != tc.shamsiDate.year {
 				t.Errorf("Test failed for testDate %d: expected Year %d, got %d\n", tc.julianDay, tc.shamsiDate.year, year)
@@ -67,7 +67,7 @@ func TestCalculateShamsiToJDN(t *testing.T) {
 	for _, tc := range julianToShamsiMapping {
 		t.Run(fmt.Sprintf("%d/%d/%d", tc.shamsiDate.year, tc.shamsiDate.month, tc.shamsiDate.day), func(t *testing.T) {
 			// calculate shamsi testDate by jdn
-			julianDay := persianToJDN(tc.shamsiDate.year, tc.shamsiDate.month, tc.shamsiDate.day)
+			julianDay := FromPersian(tc.shamsiDate.year, tc.shamsiDate.month, tc.shamsiDate.day)
 
 			if julianDay != tc.julianDay {
 				t.Errorf("Test failed for testDate %d-%d-%d: expected JDN %d, got %d\n",

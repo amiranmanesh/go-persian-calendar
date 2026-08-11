@@ -1,15 +1,38 @@
-package ptime
-
-// Calendar conversions all pass through the Julian Day Number (JDN), a
-// continuous count of days that is independent of any calendar. Going
-// Persian -> JDN -> Gregorian (and back) keeps the two calendars exact across
-// the 1582 Gregorian reform, at the cost of one extra step.
+// Package jdn converts calendar dates to and from the Julian Day Number, a
+// continuous count of days that is independent of any calendar.
+//
+// Every conversion in this module passes through a JDN. Going
+// Persian -> JDN -> Gregorian (and back) costs one extra step and keeps the
+// two calendars exact across the 1582 Gregorian reform, because the reform is
+// handled in exactly one place: dates before it are read in the Julian
+// calendar, dates on or after it in the Gregorian calendar.
 //
 // The Gregorian formulas follow https://aa.usno.navy.mil/faq/JD_formula.
+package jdn
 
-// gregorianReformJulianDay is the JDN of October 15, 1582, the first day of the
+// gregorianReform is the JDN of October 15, 1582, the first day of the
 // Gregorian calendar.
-const gregorianReformJulianDay = 2299160
+const gregorianReform = 2299160
+
+// FromGregorian returns the Julian Day Number of a Gregorian date, reading
+// dates before the 1582 reform in the Julian calendar.
+func FromGregorian(year, month, day int) int {
+	if isAfterGregorianReform(year, month, day) {
+		return fromGregorianPostReform(year, month, day)
+	}
+
+	return fromGregorianPreReform(year, month, day)
+}
+
+// ToGregorian returns the Gregorian date of a Julian Day Number, returning
+// dates before the 1582 reform in the Julian calendar.
+func ToGregorian(jdn int) (year, month, day int) {
+	if jdn > gregorianReform {
+		return toGregorianPostReform(jdn)
+	}
+
+	return toGregorianPreReform(jdn)
+}
 
 // isAfterGregorianReform reports whether the given Gregorian date falls on or
 // after the reform of October 15, 1582.
@@ -19,7 +42,7 @@ func isAfterGregorianReform(year, month, day int) bool {
 		(year == 1582 && month == 10 && day > 14)
 }
 
-// gregorianPostReformToJDN converts a Gregorian date on or after the reform
+// fromGregorianPostReform converts a Gregorian date on or after the reform
 // into its Julian Day Number.
 //
 // The formula splits the work into four parts: the year is shifted by a large
@@ -27,7 +50,7 @@ func isAfterGregorianReform(year, month, day int) bool {
 // counts whole four year cycles, the month factor spreads the 12 months over
 // the year, and the century factor applies the Gregorian rule that century
 // years are leap only when divisible by 400.
-func gregorianPostReformToJDN(year, month, day int) int {
+func fromGregorianPostReform(year, month, day int) int {
 	const (
 		// 1461 is the number of days in a four year Julian cycle (365.25 * 4).
 		daysInFourYearCycle     = 1461
@@ -48,12 +71,12 @@ func gregorianPostReformToJDN(year, month, day int) int {
 	return leapYearFactor + monthFactor - centuryFactor + day - baseDayAdjustment
 }
 
-// gregorianPreReformToJDN converts a Julian calendar date, that is a date
+// fromGregorianPreReform converts a Julian calendar date, that is a date
 // before the Gregorian reform of 1582, into its Julian Day Number.
 //
 // The Julian calendar has no century correction, so the leap year factor is a
 // plain "one day every four years" adjustment.
-func gregorianPreReformToJDN(year, month, day int) int {
+func fromGregorianPreReform(year, month, day int) int {
 	const (
 		yearOffset        = 5001
 		monthCycleFactor  = 275
@@ -68,9 +91,9 @@ func gregorianPreReformToJDN(year, month, day int) int {
 	return yearCycleFactor*year - leapYearFactor + monthFactor + day + baseDayAdjustment
 }
 
-// jdnToGregorianPostReform converts a Julian Day Number on or after the
+// toGregorianPostReform converts a Julian Day Number on or after the
 // Gregorian reform into a Gregorian date.
-func jdnToGregorianPostReform(jdn int) (year, month, day int) {
+func toGregorianPostReform(jdn int) (year, month, day int) {
 	const (
 		daysInFourYearCycle = 1461
 		// 2447 drives the month/day split: 80/2447 approximates the average
@@ -100,9 +123,9 @@ func jdnToGregorianPostReform(jdn int) (year, month, day int) {
 	return year, month, day
 }
 
-// jdnToGregorianPreReform converts a Julian Day Number before the Gregorian
+// toGregorianPreReform converts a Julian Day Number before the Gregorian
 // reform into a Julian calendar date.
-func jdnToGregorianPreReform(jdn int) (year, month, day int) {
+func toGregorianPreReform(jdn int) (year, month, day int) {
 	const (
 		daysInFourYearCycle   = 1461
 		daysInMonthMultiplier = 2447
@@ -126,13 +149,13 @@ func jdnToGregorianPreReform(jdn int) (year, month, day int) {
 	return year, month, day
 }
 
-// jdnToPersian converts a Julian Day Number into a Persian (Solar Hijri) date.
+// ToPersian converts a Julian Day Number into a Persian (Solar Hijri) date.
 //
 // The Persian calendar repeats on a 33 year cycle containing 8 leap years, so
 // the year is recovered by peeling off whole 33 year cycles, then whole four
 // year cycles, then the remainder. The first six months have 31 days and the
 // rest have 30, which makes the month/day split a pair of divisions.
-func jdnToPersian(jdn int) (year, month, day int) {
+func ToPersian(jdn int) (year, month, day int) {
 	const (
 		julianDayToPersianOffset = 1365393
 		daysIn33YearCycle        = 12053 // 33 * 365.24
@@ -169,8 +192,8 @@ func jdnToPersian(jdn int) (year, month, day int) {
 	return year, month, day
 }
 
-// persianToJDN converts a Persian (Solar Hijri) date into its Julian Day Number.
-func persianToJDN(year, month, day int) int {
+// FromPersian converts a Persian (Solar Hijri) date into its Julian Day Number.
+func FromPersian(year, month, day int) int {
 	const (
 		persianToJulianOffset = 1365392
 		leapYearCycle         = 33

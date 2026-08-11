@@ -3,6 +3,8 @@ package ptime
 import (
 	"math"
 	"time"
+
+	"github.com/amiranmanesh/go-persian-calendar/internal/jdn"
 )
 
 // minGregorianYear is the oldest Gregorian year the conversion algorithms
@@ -83,15 +85,7 @@ func Now() Time {
 
 // Time converts t back into the Gregorian calendar.
 func (t Time) Time() time.Time {
-	var year, month, day int
-
-	jdn := persianToJDN(t.year, int(t.month), t.day)
-
-	if jdn > gregorianReformJulianDay {
-		year, month, day = jdnToGregorianPostReform(jdn)
-	} else {
-		year, month, day = jdnToGregorianPreReform(jdn)
-	}
+	year, month, day := jdn.ToGregorian(jdn.FromPersian(t.year, int(t.month), t.day))
 
 	loc := t.loc
 	if loc == nil {
@@ -112,16 +106,8 @@ func (t *Time) SetTime(ti time.Time) {
 	t.wday = weekdayOf(ti.Weekday())
 
 	gy, gmm, gd := ti.Date()
-	gm := int(gmm)
 
-	var jdn int
-	if isAfterGregorianReform(gy, gm, gd) {
-		jdn = gregorianPostReformToJDN(gy, gm, gd)
-	} else {
-		jdn = gregorianPreReformToJDN(gy, gm, gd)
-	}
-
-	year, month, day := jdnToPersian(jdn)
+	year, month, day := jdn.ToPersian(jdn.FromGregorian(gy, int(gmm), gd))
 
 	t.year = year
 	t.month = Month(month)
