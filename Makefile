@@ -34,11 +34,11 @@ fuzz: ## Run each fuzz target for FUZZTIME (default 30s)
 	done
 
 .PHONY: fmt
-fmt: tools ## Format the source
+fmt: ## Format the source
 	@$(GOLANGCI_LINT) fmt -c .golangci.yaml
 
 .PHONY: lint
-lint: tools ## Run the linter
+lint: ## Run the linter
 	@$(GOLANGCI_LINT) run -c .golangci.yaml
 
 .PHONY: vuln
@@ -51,7 +51,7 @@ tidy: ## Tidy the module files
 	@go mod tidy -modfile=tools/go.mod
 
 .PHONY: tools
-tools:
+tools: ## Upgrade the pinned linter in tools/go.mod
 	@go get -modfile=tools/go.mod -tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint
 
 .PHONY: clean
