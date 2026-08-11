@@ -1,29 +1,30 @@
-# Compiled Object files, Static and Dynamic libs (Shared Objects)
+# Binaries and build artifacts
+*.exe
 *.o
 *.a
 *.so
-
-# Folders
-_obj
-_test
-.idea
-
-# Architecture specific extensions/prefixes
 *.[568vq]
 [568vq].out
 
+# cgo
 *.cgo1.go
 *.cgo2.c
 _cgo_defun.c
 _cgo_gotypes.go
 _cgo_export.*
 
-_testmain.go
-
-*.exe
+# Test and profiling output
 *.test
 *.prof
-*.iml
+_testmain.go
+coverage.out
+coverage.html
+testdata/fuzz/
 
-.history
+# Editors
+.idea
 .vscode
+.history
+*.iml
+*.swp
+.DS_Store
