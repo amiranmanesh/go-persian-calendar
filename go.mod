@@ -1,3 +1,3 @@
-module github.com/yaa110/go-persian-calendar
+module github.com/amiranmanesh/go-persian-calendar
 
-go 1.20
+go 1.21

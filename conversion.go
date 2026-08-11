@@ -1,40 +1,40 @@
 package ptime
 
-// gregorianReformJulianDay shows October 15, 1582.
+// Calendar conversions all pass through the Julian Day Number (JDN), a
+// continuous count of days that is independent of any calendar. Going
+// Persian -> JDN -> Gregorian (and back) keeps the two calendars exact across
+// the 1582 Gregorian reform, at the cost of one extra step.
+//
+// The Gregorian formulas follow https://aa.usno.navy.mil/faq/JD_formula.
+
+// gregorianReformJulianDay is the JDN of October 15, 1582, the first day of the
+// Gregorian calendar.
 const gregorianReformJulianDay = 2299160
 
-// isAfterGregorianReform checks if the testDate is after the Gregorian calendar reform (October 15, 1582).
+// isAfterGregorianReform reports whether the given Gregorian date falls on or
+// after the reform of October 15, 1582.
 func isAfterGregorianReform(year, month, day int) bool {
-	return year > 1582 || (year == 1582 && month > 10) || (year == 1582 && month == 10 && day > 14)
+	return year > 1582 ||
+		(year == 1582 && month > 10) ||
+		(year == 1582 && month == 10 && day > 14)
 }
 
-// convertGregorianPostReformToJDN calculates the Julian Day Number (JDN) for dates after the Gregorian reform.
-// This function is based on the standard algorithm for converting a Gregorian calendar testDate into a Julian Day Number.
-// The Gregorian reform was implemented on October 15, 1582, which corrected the drift of the Julian calendar by modifying
-// leap year rules and adjusting the calendar by 10 days.
+// gregorianPostReformToJDN converts a Gregorian date on or after the reform
+// into its Julian Day Number.
 //
-// The function uses several components to calculate the JDN:
-//   - adjustedYear: The year is adjusted to accommodate the shift caused by the Gregorian reform, adding 4800 and
-//     adjusting the month for the year calculation.
-//   - leapYearFactor: This factor accounts for the leap years by multiplying the adjusted year by 1461 and dividing by 4.
-//   - adjustedMonth: The month is adjusted to align with the calendar calculations, considering the calendar's
-//     month structure.
-//   - monthFactor: The adjusted month is multiplied by 367 and divided by 12 to align the month correctly.
-//   - centuryFactor: A century correction factor is calculated to account for the Gregorian reform's century rules.
-//
-// Finally, these components are combined with the day of the month (gd) and a constant offset (32075) to compute the JDN.
-// https://aa.usno.navy.mil/faq/JD_formula
-func convertGregorianPostReformToJDN(year, month, day int) int {
+// The formula splits the work into four parts: the year is shifted by a large
+// offset so that all intermediate values stay positive, the leap year factor
+// counts whole four year cycles, the month factor spreads the 12 months over
+// the year, and the century factor applies the Gregorian rule that century
+// years are leap only when divisible by 400.
+func gregorianPostReformToJDN(year, month, day int) int {
 	const (
-		// The specific value 1461 is derived from the fact that there are 365.25 days in a year on average,
-		// and 1461 represents the number of days in a 4-year cycle (365.25 * 4).
-		// This value is chosen to align with the cycles in the Gregorian calendar,
-		// especially the leap year cycle, and it's commonly used in algorithms that involve date calculations.
+		// 1461 is the number of days in a four year Julian cycle (365.25 * 4).
 		daysInFourYearCycle     = 1461
-		yearOffset              = 4800  // Offset to adjust the year for calculations
-		centuryAdjustmentOffset = 4900  // Offset to adjust the century for calculations
-		monthCycleFactor        = 367   // Multiplier used in the month cycle calculation
-		baseDayAdjustment       = 32075 // Adjustment factor for the base day calculation
+		yearOffset              = 4800
+		centuryAdjustmentOffset = 4900
+		monthCycleFactor        = 367
+		baseDayAdjustment       = 32075
 	)
 
 	adjustedYear := year + yearOffset + ((month - 14) / 12)
@@ -48,63 +48,49 @@ func convertGregorianPostReformToJDN(year, month, day int) int {
 	return leapYearFactor + monthFactor - centuryFactor + day - baseDayAdjustment
 }
 
-// convertGregorianPreReformToJDN calculates the Julian Day Number (JDN) for dates before the Gregorian reform.
-// Before the Gregorian calendar was introduced in 1582, the Julian calendar was used, which had a simpler rule for leap years
-// and no century corrections. This function uses the Julian calendar's rules to calculate the JDN.
+// gregorianPreReformToJDN converts a Julian calendar date, that is a date
+// before the Gregorian reform of 1582, into its Julian Day Number.
 //
-// The function uses several components to calculate the JDN:
-//   - adjustedYear: The year is adjusted to accommodate the Julian calendar's structure, adding 5001 and adjusting the month.
-//   - leapYearFactor: This factor accounts for the leap years under the Julian rules, multiplying the adjusted year by 7
-//     and dividing by 4.
-//   - monthFactor: The month is multiplied by 275 and divided by 9 to align the month correctly.
-//
-// These components are combined with the day of the month (gd) and a constant offset (1729777) to compute the JDN for dates
-// before the Gregorian reform.
-// https://aa.usno.navy.mil/faq/JD_formula
-func convertGregorianPreReformToJDN(year, month, day int) int {
-	adjustedYear := year + 5001 + (month-9)/7
+// The Julian calendar has no century correction, so the leap year factor is a
+// plain "one day every four years" adjustment.
+func gregorianPreReformToJDN(year, month, day int) int {
+	const (
+		yearOffset        = 5001
+		monthCycleFactor  = 275
+		yearCycleFactor   = 367
+		baseDayAdjustment = 1729777
+	)
+
+	adjustedYear := year + yearOffset + (month-9)/7
 	leapYearFactor := (7 * adjustedYear) / 4
+	monthFactor := (monthCycleFactor * month) / 9
 
-	monthFactor := (275 * month) / 9
-
-	return 367*year - leapYearFactor + monthFactor + day + 1729777
+	return yearCycleFactor*year - leapYearFactor + monthFactor + day + baseDayAdjustment
 }
 
-// convertJDNToGregorianPostReform converts a Julian Day Number (JDN) to the corresponding
-// Gregorian testDate for dates after the Gregorian calendar reform (after October 15, 1582).
-// https://aa.usno.navy.mil/faq/JD_formula
-func convertJDNToGregorianPostReform(jdn int) (year, month, day int) {
+// jdnToGregorianPostReform converts a Julian Day Number on or after the
+// Gregorian reform into a Gregorian date.
+func jdnToGregorianPostReform(jdn int) (year, month, day int) {
 	const (
 		daysInFourYearCycle = 1461
-		// The specific value 2447 is chosen based on the characteristics of the Gregorian calendar and its various cycles.
-		// It plays a role in the algorithm to determine the month and day components of the Gregorian date during the conversion process from Julian Day.
+		// 2447 drives the month/day split: 80/2447 approximates the average
+		// month length once the year starts in March.
 		daysInMonthMultiplier = 2447
-		// Offset used to adjust Julian Day
-		julianDayOffset = 68569
-		// The specific value 1461001 is derived from the fact that there are 365.25 days in a year on average,
-		// and 1461001 represents the number of days in a 4000-year cycle (365.25 * 4000).
-		// This value is chosen to align with the cycles in the Gregorian calendar,
-		// facilitating the conversion between Julian Day and Gregorian Date.
-		julianDay4000YearCycleDayOffset = 1461001 // 365.25 * 4000
-		// The specific value 146097 is derived from the fact that there are 365.25 days in a year on average,
-		// and 146097 represents the number of days in a 400-year cycle (365.25 * 400).
-		// This value is commonly used in algorithms that involve date calculations, especially when dealing with leap years.
-		julianDayOf400Years = 146097 // 365.25 * 400
+		julianDayOffset       = 68569
+		// 1461001 is the number of days in a 4000 year cycle (365.25 * 4000).
+		daysIn4000YearCycle = 1461001
+		// 146097 is the number of days in a 400 year Gregorian cycle.
+		daysIn400YearCycle = 146097
 	)
 
 	offsetJDN := jdn + julianDayOffset
 
-	// Calculate century
-	century := 4 * offsetJDN / julianDayOf400Years
-	//nolint:gocritic
-	offsetJDN = offsetJDN - (julianDayOf400Years*century+3)/4
+	century := 4 * offsetJDN / daysIn400YearCycle
+	offsetJDN -= (daysIn400YearCycle*century + 3) / 4
 
-	// Calculate year
-	yearBase := 4000 * (offsetJDN + 1) / julianDay4000YearCycleDayOffset
-
+	yearBase := 4000 * (offsetJDN + 1) / daysIn4000YearCycle
 	offsetJDN = offsetJDN - daysInFourYearCycle*yearBase/4 + 31
 
-	// Calculate month and day
 	monthFactor := 80 * offsetJDN / daysInMonthMultiplier
 	day = offsetJDN - daysInMonthMultiplier*monthFactor/80
 	offsetJDN = monthFactor / 11
@@ -114,115 +100,100 @@ func convertJDNToGregorianPostReform(jdn int) (year, month, day int) {
 	return year, month, day
 }
 
-// convertJDNToGregorianPreReform converts a Julian Day Number (JDN) to the corresponding
-// Gregorian testDate for dates before the Gregorian calendar reform (before October 15, 1582).
-func convertJDNToGregorianPreReform(jdn int) (year, month, day int) {
+// jdnToGregorianPreReform converts a Julian Day Number before the Gregorian
+// reform into a Julian calendar date.
+func jdnToGregorianPreReform(jdn int) (year, month, day int) {
 	const (
 		daysInFourYearCycle   = 1461
-		daysInMonthMultiplier = 2447 // Multiplier used for month calculation
-		julianDayOffset       = 1402 // Offset used to adjust Julian Day for pre-Gregorian dates
+		daysInMonthMultiplier = 2447
+		julianDayOffset       = 1402
+		epochYearOffset       = 4716
 	)
 
 	offsetJDN := jdn + julianDayOffset
 
-	// Calculate year
 	quadrennialCycle := (offsetJDN - 1) / daysInFourYearCycle
 	remainingDays := offsetJDN - daysInFourYearCycle*quadrennialCycle
 	yearAdjustment := (remainingDays-1)/365 - remainingDays/daysInFourYearCycle
 	dayOfYear := remainingDays - 365*yearAdjustment + 30
 
-	// Calculate month and day
 	monthFactor := 80 * dayOfYear / daysInMonthMultiplier
 	day = dayOfYear - daysInMonthMultiplier*monthFactor/80
 	yearFraction := monthFactor / 11
 	month = monthFactor + 2 - 12*yearFraction
-	year = 4*quadrennialCycle + yearAdjustment + yearFraction - 4716
+	year = 4*quadrennialCycle + yearAdjustment + yearFraction - epochYearOffset
 
 	return year, month, day
 }
 
-// convertJDNToShamsi converts a Julian Day Number (JDN) to the Shamsi (Solar Hijri) calendar testDate.
-// The conversion is based on the offset between the Julian calendar and the Shamsi calendar.
-// The calculation is performed as follows:
-// - The JDN is adjusted by subtracting a constant offset to align it with the Shamsi calendar.
-// - The resulting value is used to calculate the year by accounting for cycles of 33 years and leap years.
-// - The month and day are then calculated based on the remaining days within the year.
+// jdnToPersian converts a Julian Day Number into a Persian (Solar Hijri) date.
 //
-// Parameters:
-// - jdn: The Julian Day Number to be converted.
-//
-// Returns:
-// - year: The calculated year in the Shamsi calendar.
-// - month: The calculated month in the Shamsi calendar.
-// - day: The calculated day in the Shamsi calendar.
-func convertJDNToShamsi(jdn int) (year, month, day int) {
+// The Persian calendar repeats on a 33 year cycle containing 8 leap years, so
+// the year is recovered by peeling off whole 33 year cycles, then whole four
+// year cycles, then the remainder. The first six months have 31 days and the
+// rest have 30, which makes the month/day split a pair of divisions.
+func jdnToPersian(jdn int) (year, month, day int) {
 	const (
-		julianDayToShamsiOffset = 1365393
-		cyclesOf33YearsCount    = 12053 // 33 * 364.24
-		daysInFourYearCycle     = 1461
-		middleDayInYear         = 186 // 6 * 31
+		julianDayToPersianOffset = 1365393
+		daysIn33YearCycle        = 12053 // 33 * 365.24
+		daysInFourYearCycle      = 1461
+		daysInFirstHalf          = 186 // 6 * 31
+		epochYearOffset          = 1595
+		longMonthDays            = 31
+		shortMonthDays           = 30
 	)
 
-	// Align the Julian Day Number with the Shamsi calendar
-	daysSinceStartOfShamsi := jdn - julianDayToShamsiOffset
+	daysSinceEpoch := jdn - julianDayToPersianOffset
 
-	// Calculate the Shamsi year
-	cyclesOf33Years := daysSinceStartOfShamsi / cyclesOf33YearsCount
-	year = -1595 + 33*cyclesOf33Years
-	remainingDays := daysSinceStartOfShamsi % cyclesOf33YearsCount
+	cyclesOf33Years := daysSinceEpoch / daysIn33YearCycle
+	year = -epochYearOffset + 33*cyclesOf33Years
+	remainingDays := daysSinceEpoch % daysIn33YearCycle
 
 	cyclesOf4Years := remainingDays / daysInFourYearCycle
 	year += 4 * cyclesOf4Years
 	remainingDays %= daysInFourYearCycle
 
-	// Adjust for remaining days within the current cycle
 	if remainingDays > 365 {
 		year += (remainingDays - 1) / 365
 		remainingDays = (remainingDays - 1) % 365
 	}
 
-	// Determine the Shamsi month and day
-	if remainingDays < middleDayInYear {
-		month = 1 + remainingDays/31
-		day = 1 + remainingDays%31
+	if remainingDays < daysInFirstHalf {
+		month = 1 + remainingDays/longMonthDays
+		day = 1 + remainingDays%longMonthDays
 	} else {
-		month = 7 + (remainingDays-middleDayInYear)/30
-		day = 1 + (remainingDays-middleDayInYear)%30
+		month = 7 + (remainingDays-daysInFirstHalf)/shortMonthDays
+		day = 1 + (remainingDays-daysInFirstHalf)%shortMonthDays
 	}
 
 	return year, month, day
 }
 
-// convertShamsiToJDN converts a Shamsi (Solar Hijri) calendar testDate to the corresponding Julian Day Number (JDN).
-// The calculation takes into account the specific offset and adjustments needed for leap years in the Shamsi calendar.
-func convertShamsiToJDN(year, month, day int) int {
+// persianToJDN converts a Persian (Solar Hijri) date into its Julian Day Number.
+func persianToJDN(year, month, day int) int {
 	const (
-		shamsiToJulianOffset = 1365392
-		leapYearCycle        = 33
-		leapYearContribution = 8
-		middleDayInYear      = 186 // 6 * 31
-		daysInFirstSixMonths = 31  // Months 1-6: each month has 31 days
-		daysInNextSixMonths  = 30  // Months 7-12: each month has 30 days
+		persianToJulianOffset = 1365392
+		leapYearCycle         = 33
+		leapYearsPerCycle     = 8
+		daysInFirstHalf       = 186 // 6 * 31
+		longMonthDays         = 31
+		shortMonthDays        = 30
+		epochYearOffset       = 1595
 	)
 
-	// Adjust the Shamsi year for the calculation
-	adjustedShamsiYear := year + 1595
+	adjustedYear := year + epochYearOffset
 
-	// Calculate the number of leap years that have occurred up to the given year
-	leapYearContributionCount := (adjustedShamsiYear/leapYearCycle)*leapYearContribution +
-		((adjustedShamsiYear%leapYearCycle + 3) / 4)
+	// Leap days accumulated so far: 8 per full 33 year cycle, plus one per
+	// completed four year step inside the current cycle.
+	leapDays := (adjustedYear/leapYearCycle)*leapYearsPerCycle +
+		((adjustedYear%leapYearCycle + 3) / 4)
 
-	// Determine the day of the year within the Shamsi calendar
 	var dayOfYear int
 	if month < 7 {
-		dayOfYear = (month - 1) * daysInFirstSixMonths
+		dayOfYear = (month - 1) * longMonthDays
 	} else {
-		dayOfYear = (month-7)*daysInNextSixMonths + middleDayInYear
+		dayOfYear = (month-7)*shortMonthDays + daysInFirstHalf
 	}
 
-	// Calculate the Julian Day Number (JDN)
-	jdn := shamsiToJulianOffset + 365*adjustedShamsiYear +
-		leapYearContributionCount + dayOfYear + day
-
-	return jdn
+	return persianToJulianOffset + 365*adjustedYear + leapDays + dayOfYear + day
 }

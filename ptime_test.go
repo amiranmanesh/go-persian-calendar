@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	ptime "github.com/yaa110/go-persian-calendar"
+	ptime "github.com/amiranmanesh/go-persian-calendar"
 )
 
 type pMonthName struct {
@@ -681,12 +681,12 @@ func TestTimeFormat(t *testing.T) {
 		"4":          "7",
 		"05":         "08",
 		"5":          "8",
-		".000":       ".520",
-		".000000":    ".520650",
-		".000000000": ".52065090",
-		".999":       ".52",
-		".999999":    ".52065",
-		".999999999": ".5206509",
+		".000":       ".052",
+		".000000":    ".052065",
+		".000000000": ".052065090",
+		".999":       ".052",
+		".999999":    ".052065",
+		".999999999": ".05206509",
 		"PM":         "بعد از ظهر",
 		"pm":         "ب.ظ",
 		"MST":        "Asia/Tehran",

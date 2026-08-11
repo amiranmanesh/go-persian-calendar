@@ -27,11 +27,35 @@ linters:
     - mnd
     - nonamedreturns
     - nlreturn
+    # `if err := f(); err != nil` is idiomatic Go and used throughout the
+    # standard library.
+    - noinlineerr
     - paralleltest
     - recvcheck
     - varnamelen
     - wsl
     - wsl_v5
+  settings:
+    errcheck:
+      check-type-assertions: true
+    govet:
+      enable-all: true
+      disable:
+        # Field order follows the calendar, which reads better than packing.
+        - fieldalignment
+    revive:
+      rules:
+        - name: unused-parameter
+          disabled: true
+  exclusions:
+    rules:
+      # Table driven tests and fuzz seeds are naturally long and repetitive.
+      - path: _test\.go$
+        linters:
+          - err113
+          - forcetypeassert
+          - gosec
 formatters:
   enable:
     - gofmt
+    - gofumpt
