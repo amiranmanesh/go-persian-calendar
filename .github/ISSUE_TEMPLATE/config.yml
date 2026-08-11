@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://pkg.go.dev/github.com/amiranmanesh/go-persian-calendar
+    about: API reference for every exported identifier.
+  - name: Guides and examples
+    url: https://github.com/amiranmanesh/go-persian-calendar/wiki
+    about: Longer walkthroughs in the project wiki.
+  - name: Questions and ideas
+    url: https://github.com/amiranmanesh/go-persian-calendar/discussions
+    about: Ask a question or discuss an idea before opening an issue.
+  - name: Security report
+    url: https://github.com/amiranmanesh/go-persian-calendar/security/advisories/new
+    about: Report a vulnerability privately.

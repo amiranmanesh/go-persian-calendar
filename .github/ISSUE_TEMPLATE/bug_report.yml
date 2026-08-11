@@ -1,0 +1,53 @@
+name: Bug report
+description: A conversion, formatting or parsing result that is wrong
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Calendar bugs are usually easy to fix once the
+        exact dates and layout are known, so please be specific.
+
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: v1.4.0
+    validations:
+      required: true
+
+  - type: input
+    id: go-version
+    attributes:
+      label: Go version
+      placeholder: go1.25.0 darwin/arm64
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproducer
+    attributes:
+      label: Reproducer
+      description: The smallest program that shows the problem.
+      render: go
+      placeholder: |
+        pt := ptime.Date(1394, ptime.Mehr, 2, 0, 0, 0, 0, ptime.Iran())
+        fmt.Println(pt.Format("yyyy-MM-dd"))
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what you got instead
+      placeholder: |
+        expected: 1394-07-02
+        got:      1394-07-01
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: Time zone, locale, or anything that might matter.

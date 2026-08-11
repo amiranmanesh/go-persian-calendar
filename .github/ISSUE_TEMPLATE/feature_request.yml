@@ -1,0 +1,30 @@
+name: Feature request
+description: Suggest an addition to the API
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the use case rather than the solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API
+      description: Signatures and a short example of how it would be used.
+      render: go
+
+  - type: input
+    id: stdlib
+    attributes:
+      label: Standard library equivalent
+      description: If the `time` package has something similar, name it here.
+      placeholder: time.Time.AppendFormat
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
