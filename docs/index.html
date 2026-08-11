@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Go Persian Calendar — ptime</title>
+<meta name="description" content="A complete, dependency-free Persian (Solar Hijri / Jalali) calendar for Go, shaped like the standard time package.">
+<meta property="og:title" content="Go Persian Calendar">
+<meta property="og:description" content="A complete, dependency-free Persian (Solar Hijri / Jalali) calendar for Go.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
+<style>
+  :root {
+    --bg: #fbfaf8;
+    --bg-elev: #ffffff;
+    --fg: #1c1a17;
+    --fg-muted: #6b6459;
+    --border: #e6e0d6;
+    --accent: #0a7d5a;
+    --accent-soft: #e6f4ee;
+    --code-bg: #f4f1eb;
+    --shadow: 0 1px 2px rgb(28 26 23 / 6%), 0 8px 24px rgb(28 26 23 / 6%);
+    --radius: 12px;
+    --max: 960px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12110f;
+      --bg-elev: #1a1815;
+      --fg: #f0ece4;
+      --fg-muted: #9d9488;
+      --border: #2c2925;
+      --accent: #4fd1a1;
+      --accent-soft: #142a22;
+      --code-bg: #1f1c19;
+      --shadow: none;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  code, pre, kbd {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.9em;
+  }
+
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+
+  header.hero {
+    padding: 80px 0 56px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .eyebrow {
+    display: inline-block;
+    padding: 4px 12px;
+    margin-bottom: 20px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  h1 {
+    margin: 0 0 16px;
+    font-size: clamp(34px, 6vw, 52px);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  .tagline {
+    max-width: 620px;
+    margin: 0 auto 32px;
+    color: var(--fg-muted);
+    font-size: clamp(16px, 2.2vw, 19px);
+  }
+
+  .install {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 560px;
+    margin: 0 auto 24px;
+    padding: 12px 16px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    text-align: left;
+  }
+
+  .install code { flex: 1; overflow-x: auto; white-space: nowrap; }
+  .install .prompt { color: var(--fg-muted); user-select: none; }
+
+  button.copy {
+    padding: 5px 11px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--fg-muted);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  button.copy:hover { color: var(--accent); border-color: var(--accent); }
+
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+
+  .btn {
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--bg-elev);
+    font-weight: 550;
+    font-size: 15px;
+  }
+  .btn:hover { text-decoration: none; border-color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { filter: brightness(1.08); }
+
+  section { padding: 64px 0; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: none; }
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 27px;
+    letter-spacing: -0.01em;
+  }
+
+  .section-lead { margin: 0 0 32px; color: var(--fg-muted); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 18px;
+  }
+
+  .card {
+    padding: 22px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .card h3 { margin: 0 0 6px; font-size: 16px; }
+  .card p { margin: 0; color: var(--fg-muted); font-size: 15px; }
+
+  pre {
+    margin: 0;
+    padding: 18px 20px;
+    overflow-x: auto;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    line-height: 1.6;
+  }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+
+  .tab {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--fg-muted);
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .tab[aria-selected="true"] {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .panel[hidden] { display: none; }
+
+  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th, td { padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { background: var(--code-bg); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { white-space: nowrap; }
+
+  footer {
+    padding: 40px 0 56px;
+    color: var(--fg-muted);
+    font-size: 14.5px;
+    text-align: center;
+  }
+  footer p { margin: 6px 0; }
+
+  .fa { direction: rtl; text-align: right; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">package ptime</span>
+    <h1>Go Persian Calendar</h1>
+    <p class="tagline">
+      A complete, dependency-free Persian (Solar Hijri&nbsp;/ Jalali) calendar for Go —
+      shaped like the standard <code>time</code> package.
+    </p>
+
+    <div class="install">
+      <span class="prompt">$</span>
+      <code id="install-cmd">go get github.com/amiranmanesh/go-persian-calendar</code>
+      <button class="copy" type="button" data-copy="install-cmd">Copy</button>
+    </div>
+
+    <div class="cta">
+      <a class="btn primary" href="https://pkg.go.dev/github.com/amiranmanesh/go-persian-calendar">API reference</a>
+      <a class="btn" href="https://github.com/amiranmanesh/go-persian-calendar">GitHub</a>
+      <a class="btn" href="https://github.com/amiranmanesh/go-persian-calendar/wiki">Wiki</a>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <h2>What you get</h2>
+    <p class="section-lead">Everything the standard <code>time</code> package gives you, in the Persian calendar.</p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Familiar API</h3>
+        <p><code>Now</code>, <code>Date</code>, <code>Add</code>, <code>AddDate</code>, <code>Sub</code>, <code>Before</code>, <code>After</code>, <code>Compare</code>, <code>Truncate</code>, <code>Round</code> — same names, same semantics.</p>
+      </div>
+      <div class="card">
+        <h3>Two layout languages</h3>
+        <p>Pattern letters (<code>yyyy/MM/dd</code>) and the Go reference time (<code>2006/01/02</code>). Pick whichever your team already reads.</p>
+      </div>
+      <div class="card">
+        <h3>Parsing, not just formatting</h3>
+        <p><code>Parse</code>, <code>ParseInLocation</code> and their reference-time twins, with a <code>ParseError</code> that names the element that failed.</p>
+      </div>
+      <div class="card">
+        <h3>JSON and SQL ready</h3>
+        <p>Implements <code>json.Marshaler</code>, <code>encoding.TextMarshaler</code>, <code>driver.Valuer</code> and <code>sql.Scanner</code>. No wrapper type needed.</p>
+      </div>
+      <div class="card">
+        <h3>Iranian and Dari names</h3>
+        <p>Dari month names are selected automatically in <code>Asia/Kabul</code>, or explicitly with the <code>MMI</code> pattern.</p>
+      </div>
+      <div class="card">
+        <h3>Exact conversions</h3>
+        <p>Every conversion goes through the Julian Day Number, so it stays correct on both sides of the 1582 Gregorian reform.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="examples">
+  <div class="wrap">
+    <h2>In practice</h2>
+    <p class="section-lead">A few lines each, straight from the test suite.</p>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-panel="p-convert">Convert</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="p-format">Format</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="p-parse">Parse</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="p-json">JSON</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="p-calendar">Calendar</button>
+    </div>
+
+    <div class="panel" id="p-convert" role="tabpanel"><pre><code>import ptime "github.com/amiranmanesh/go-persian-calendar"
+
+// Gregorian to Persian
+gt := time.Date(2016, time.January, 1, 12, 1, 1, 0, ptime.Iran())
+pt := ptime.New(gt)
+fmt.Println(pt.Date()) // 1394 دی 11
+
+// Persian to Gregorian
+pt = ptime.Date(1394, ptime.Mehr, 2, 12, 59, 59, 0, ptime.Iran())
+fmt.Println(pt.Time().Format(time.DateOnly)) // 2015-09-24</code></pre></div>
+
+    <div class="panel" id="p-format" role="tabpanel" hidden><pre><code>pt := ptime.Unix(1454277270, 0)
+
+pt.Format("yyyy/MM/dd E hh:mm:ss a") // 1394/11/11 یک‌شنبه 09:54:30 ب.ظ
+pt.Format(ptime.RFC3339)             // 1394-11-11T21:54:30+03:30
+pt.Format(ptime.LongDate)            // یک‌شنبه 11 بهمن 1394
+pt.TimeFormat("2 Jan 2006")          // 11 بهمن 1394
+
+// Write into an existing buffer, no string allocation
+buf = pt.AppendFormat(buf[:0], ptime.DateTime)</code></pre></div>
+
+    <div class="panel" id="p-parse" role="tabpanel" hidden><pre><code>pt, err := ptime.Parse(ptime.DateTime, "1394-07-02 12:59:59")
+if err != nil {
+    var perr *ptime.ParseError
+    errors.As(err, &amp;perr) // names the layout element that failed
+}
+
+// Month names, either script
+pt, err = ptime.ParseInLocation("d MMM yyyy", "2 مهر 1394", ptime.Iran())
+
+// Reference-time layouts work too
+pt, err = ptime.ParseTimeFormat("2006/01/02", "1394/07/02")</code></pre></div>
+
+    <div class="panel" id="p-json" role="tabpanel" hidden><pre><code>type Event struct {
+    Name string     `json:"name"`
+    At   ptime.Time `json:"at"`
+}
+
+json.Marshal(Event{
+    Name: "نوروز",
+    At:   ptime.Date(1404, ptime.Farvardin, 1, 0, 0, 0, 0, ptime.Iran()),
+})
+// {"name":"نوروز","at":"1404-01-01T00:00:00+03:30"}
+
+// The zero Time round trips as null, and as SQL NULL through Value/Scan.</code></pre></div>
+
+    <div class="panel" id="p-calendar" role="tabpanel" hidden><pre><code>pt := ptime.Now()
+
+pt.IsLeap()             // is this a leap year?
+pt.YearDay()            // day of year
+pt.RMonthDay()          // days left in the month
+pt.MonthWeek()          // week of month
+pt.BeginningOfWeek()    // Shanbeh at 00:00:00
+pt.LastMonthDay()       // 29, 30 or 31, whichever is right
+pt.Tomorrow().Weekday() // شنبه</code></pre></div>
+  </div>
+</section>
+
+<section id="layouts">
+  <div class="wrap">
+    <h2>Predefined layouts</h2>
+    <p class="section-lead">Constants for the shapes you reach for most.</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Constant</th><th>Layout</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>RFC3339</code></td><td><code>yyyy-MM-ddTHH:mm:ssZ</code></td><td><code>1394-07-02T12:59:59+03:30</code></td></tr>
+          <tr><td><code>RFC3339Nano</code></td><td><code>yyyy-MM-ddTHH:mm:ss.999999999Z</code></td><td><code>1394-07-02T12:59:59.052+03:30</code></td></tr>
+          <tr><td><code>DateTime</code></td><td><code>yyyy-MM-dd HH:mm:ss</code></td><td><code>1394-07-02 12:59:59</code></td></tr>
+          <tr><td><code>DateOnly</code></td><td><code>yyyy-MM-dd</code></td><td><code>1394-07-02</code></td></tr>
+          <tr><td><code>TimeOnly</code></td><td><code>HH:mm:ss</code></td><td><code>12:59:59</code></td></tr>
+          <tr><td><code>Kitchen</code></td><td><code>h:mm a</code></td><td><code>12:59 ب.ظ</code></td></tr>
+          <tr><td><code>LongDate</code></td><td><code>E d MMM yyyy</code></td><td><code>پنج‌شنبه 2 مهر 1394</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top:20px; color:var(--fg-muted)">
+      The full pattern-letter table lives in the
+      <a href="https://pkg.go.dev/github.com/amiranmanesh/go-persian-calendar#Time.Format">API reference</a>.
+    </p>
+  </div>
+</section>
+
+<section id="farsi" class="fa" lang="fa">
+  <div class="wrap">
+    <h2>به فارسی</h2>
+    <p class="section-lead">
+      پکیج <code>ptime</code> تبدیل بین تقویم هجری شمسی و میلادی را انجام می‌دهد و نوع <code>Time</code> را
+      در اختیار شما می‌گذارد که مانند <code>time.Time</code> رفتار می‌کند: همان نام متدها، همان معنای مقداری
+      و همان روش قالب‌بندی. قالب‌بندی، تجزیه، JSON و SQL همگی پشتیبانی می‌شوند و نام ماه‌ها هم به شکل
+      ایرانی و هم دری در دسترس است.
+    </p>
+    <div class="cta" style="justify-content:flex-start">
+      <a class="btn primary" href="https://github.com/amiranmanesh/go-persian-calendar/blob/main/README.fa.md">راهنمای فارسی</a>
+      <a class="btn" href="https://github.com/amiranmanesh/go-persian-calendar/wiki">ویکی پروژه</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>MIT licensed. Originally created by <a href="https://github.com/yaa110">Navid Fathollahzade</a>, maintained by <a href="https://github.com/amiranmanesh">Amir Iranmanesh</a>.</p>
+    <p><a href="https://github.com/amiranmanesh/go-persian-calendar">Source</a> · <a href="https://pkg.go.dev/github.com/amiranmanesh/go-persian-calendar">Docs</a> · <a href="https://github.com/amiranmanesh/go-persian-calendar/blob/main/CHANGELOG.md">Changelog</a></p>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('.tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var tabs = tab.parentElement.querySelectorAll('.tab');
+
+      tabs.forEach(function (other) {
+        var selected = other === tab;
+        other.setAttribute('aria-selected', String(selected));
+        document.getElementById(other.dataset.panel).hidden = !selected;
+      });
+    });
+  });
+
+  document.querySelectorAll('button.copy').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var text = document.getElementById(button.dataset.copy).textContent;
+
+      navigator.clipboard.writeText(text).then(function () {
+        var original = button.textContent;
+        button.textContent = 'Copied';
+        setTimeout(function () { button.textContent = original; }, 1500);
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
