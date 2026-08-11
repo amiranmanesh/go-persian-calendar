@@ -92,3 +92,11 @@ jobs:
       - run: go mod tidy
       - name: Fail if go.mod or go.sum changed
         run: git diff --exit-code -- go.mod go.sum
+
+  data:
+    name: published data matches the embedded data
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Compare the embedded file with the one served from the site
+        run: diff -u holiday/data/iran.json docs/data/v1/iran.json
