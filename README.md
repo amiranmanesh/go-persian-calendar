@@ -1,194 +1,245 @@
+<div align="center">
+
 # Go Persian Calendar
 
-[![godoc](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/github.com/yaa110/go-persian-calendar) [![Test and Build](https://github.com/yaa110/go-persian-calendar/workflows/Test%20and%20Build/badge.svg)](https://github.com/yaa110/go-persian-calendar/actions?query=workflow%3A"Test+and+Build") [![goreportcard](https://img.shields.io/badge/go%20report-A%2B-brightgreen.svg)](http://goreportcard.com/report/yaa110/go-persian-calendar) [![License](http://img.shields.io/:license-mit-blue.svg)](https://github.com/yaa110/go-persian-calendar/blob/master/LICENSE)
+**A complete, dependency-free Persian (Solar Hijri / Jalali) calendar for Go — shaped like the standard `time` package.**
 
-**Go Persian Calendar** provides functionality for conversion among Persian (Solar Hijri) and Gregorian calendars. A Julian calendar is used as an interface for all conversions. The package name is `ptime` and it is compatible with the package [time](https://golang.org/pkg/time). All months are available with both Iranian and Dari Persian names. This source code is licensed under MIT license that can be found in the LICENSE file.
+[![Go Reference](https://pkg.go.dev/badge/github.com/amiranmanesh/go-persian-calendar.svg)](https://pkg.go.dev/github.com/amiranmanesh/go-persian-calendar)
+[![CI](https://github.com/amiranmanesh/go-persian-calendar/actions/workflows/ci.yml/badge.svg)](https://github.com/amiranmanesh/go-persian-calendar/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/amiranmanesh/go-persian-calendar)](https://goreportcard.com/report/github.com/amiranmanesh/go-persian-calendar)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/amiranmanesh/go-persian-calendar)](go.mod)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+[English](README.md) · [فارسی](README.fa.md)
+
+</div>
+
+---
+
+`ptime` converts between the Persian and Gregorian calendars and gives you a `Time` type that behaves like `time.Time`: same method names, same value semantics, same layout-driven formatting. Conversions go through the Julian Day Number, so they stay exact on both sides of the 1582 Gregorian reform.
+
+## Features
+
+- **Familiar API** — `Now`, `Date`, `Unix`, `Add`, `AddDate`, `Sub`, `Before`, `After`, `Equal`, `Compare`, `Truncate`, `Round`.
+- **Two layout languages** — the pattern-letter style (`yyyy/MM/dd`) and the standard library reference-time style (`2006/01/02`).
+- **Parsing, not just formatting** — `Parse`, `ParseInLocation`, `ParseTimeFormat`, `ParseTimeFormatInLocation`.
+- **Ready for JSON and SQL** — implements `json.Marshaler`, `encoding.TextMarshaler`, `driver.Valuer` and `sql.Scanner`.
+- **Iranian and Dari names** — Dari month names are selected automatically for the `Asia/Kabul` location.
+- **Calendar helpers** — leap years, week of month, week of year, first and last day of the week, month and year.
+- **Zero dependencies**, allocation-conscious formatting, and a fuzz-tested parser.
 
 ## Installation
 
 ```bash
-go get github.com/yaa110/go-persian-calendar
+go get github.com/amiranmanesh/go-persian-calendar
 ```
 
-## Getting started
-
-1- Import the package `ptime`. Most of the time you need to import `time` and `fmt` packages, too.
+Requires Go 1.21 or newer.
 
 ```go
-import (
-    ptime "github.com/yaa110/go-persian-calendar"
-    "time"
-    "fmt"
-)
+import ptime "github.com/amiranmanesh/go-persian-calendar"
 ```
 
-2- Convert Gregorian calendar to Persian calendar.
+## Quick start
+
+### Gregorian to Persian
 
 ```go
-// Create a new instance of time.Time
-var t time.Time = time.Date(2016, time.January, 1, 12, 1, 1, 0, ptime.Iran())
+gt := time.Date(2016, time.January, 1, 12, 1, 1, 0, ptime.Iran())
 
-// Get a new instance of ptime.Time using time.Time
-pt := ptime.New(t)
+pt := ptime.New(gt)
 
-// Get the date in Persian calendar
-fmt.Println(pt.Date()) // output: 1394 دی 11
+fmt.Println(pt.Date()) // 1394 دی 11
 ```
 
-3- Convert Persian calendar to Gregorian calendar.
+### Persian to Gregorian
 
 ```go
-// Create a new instance of ptime.Time
-var pt ptime.Time = ptime.Date(1394, ptime.Mehr, 2, 12, 59, 59, 0, ptime.Iran())
+pt := ptime.Date(1394, ptime.Mehr, 2, 12, 59, 59, 0, ptime.Iran())
 
-// Get a new instance of time.Time
-t := pt.Time()
-
-// Get the date in Gregorian calendar
-fmt.Println(t.Date()) // output: 2015 September 24
+fmt.Println(pt.Time().Format(time.DateOnly)) // 2015-09-24
 ```
 
-4- Get the current time.
+### The current moment
 
 ```go
-// Get a new instance of ptime.Time representing the current time
 pt := ptime.Now()
 
-// Get year, month, day
-fmt.Println(pt.Date()) // output: 1394 بهمن 11
-fmt.Println(pt.Year(), pt.Month(), pt.Day()) // output: 1394 بهمن 11
-
-// Get hour, minute, second
-fmt.Println(pt.Clock()) // output: 21 54 30
-fmt.Println(pt.Hour(), pt.Minute(), pt.Second()) // output: 21 54 30
-
-// Get Unix timestamp (the number of seconds since January 1, 1970 UTC)
-fmt.Println(pt.Unix()) // output: 1454277270
-
-// Get yesterday, today and tomorrow
-fmt.Println(pt.Yesterday().Weekday()) // output: شنبه
-fmt.Println(pt.Weekday()) // output: یک‌شنبه
-fmt.Println(pt.Tomorrow().Weekday()) // output: دوشنبه
-
-// Get First and last day of week
-fmt.Println(pt.FirstWeekDay().Date()) // output: 1394 بهمن 10
-fmt.Println(pt.LastWeekday().Date()) // output: 1394 بهمن 16
-
-// Get First and last day of month
-fmt.Println(pt.FirstMonthDay().Weekday()) // output: پنج‌شنبه
-fmt.Println(pt.LastMonthDay().Weekday()) // output: جمعه
-
-// Get First and last day of year
-fmt.Println(pt.FirstYearDay().Weekday()) // output: شنبه
-fmt.Println(pt.LastYearDay().Weekday()) // output: شنبه
-
-// Get the week of month
-fmt.Println(pt.MonthWeek()) // output: 3
-
-// Get the week of year
-fmt.Println(pt.YearWeek()) // output: 46
-
-// Get the number of remaining weeks of the year
-fmt.Println(pt.RYearWeek()) // output: 6
-
-// Compare times
-pt1 := ptime.Date(1394, ptime.Mehr, 2, 12, 0, 0, 0, ptime.Iran())
-pt2 := ptime.Date(1394, ptime.Mehr, 3, 12, 0, 0, 0, ptime.Iran())
-fmt.Println(pt1.Before(pt2))  // output: true
-fmt.Println(pt1.After(pt2))   // output: false
-fmt.Println(pt1.Equal(pt2))   // output: false
-fmt.Println(pt1.Compare(pt2)) // output: -1
+fmt.Println(pt.Date())                                  // 1394 بهمن 11
+fmt.Println(pt.Clock())                                 // 21 54 30
+fmt.Println(pt.Unix())                                  // 1454277270
+fmt.Println(pt.Weekday())                               // یک‌شنبه
+fmt.Println(pt.Yesterday().Weekday())                   // شنبه
+fmt.Println(pt.BeginningOfMonth().Format(ptime.DateOnly)) // 1394-11-01
+fmt.Println(pt.LastMonthDay().Day())                    // 30
+fmt.Println(pt.IsLeap(), pt.YearWeek(), pt.MonthWeek())
 ```
 
-5- Format the time.
+### Formatting
 
 ```go
-// Get a new instance of ptime.Time using Unix timestamp
 pt := ptime.Unix(1454277270, 0)
 
-fmt.Println(pt.Format("yyyy/MM/dd E hh:mm:ss a")) // output: 1394/11/11 یک‌شنبه 09:54:30 ب.ظ
-
-// yyyy, yyy, y     year (e.g. 1394)
-// yy               2-digits representation of year (e.g. 94)
-// MMM              the Persian name of month (e.g. فروردین)
-// MMI              the Dari name of month (e.g. حمل)
-// MM               2-digits representation of month (e.g. 01)
-// M                month (e.g. 1)
-// rw               remaining weeks of year
-// w                week of year
-// W                week of month
-// RD               remaining days of year
-// D                day of year
-// rd               remaining days of month
-// dd               2-digits representation of day (e.g. 01)
-// d                day (e.g. 1)
-// E                the Persian name of weekday (e.g. شنبه)
-// e                the Persian short name of weekday (e.g. ش)
-// A                the Persian name of 12-Hour marker (e.g. قبل از ظهر)
-// a                the Persian short name of 12-Hour marker (e.g. ق.ظ)
-// HH               2-digits representation of hour [00-23]
-// H                hour [0-23]
-// kk               2-digits representation of hour [01-24]
-// k                hour [1-24]
-// hh               2-digits representation of hour [01-12]
-// h                hour [1-12]
-// KK               2-digits representation of hour [00-11]
-// K                hour [0-11]
-// mm               2-digits representation of minute [00-59]
-// m                minute [0-59]
-// ss               2-digits representation of seconds [00-59]
-// s                seconds [0-59]
-// ns               nanoseconds
-// S                3-digits representation of milliseconds (e.g. 001)
-// z                the name of location
-// Z                zone offset (e.g. +03:30)
+pt.Format("yyyy/MM/dd E hh:mm:ss a") // 1394/11/11 یک‌شنبه 09:54:30 ب.ظ
+pt.Format(ptime.RFC3339)             // 1394-11-11T21:54:30+03:30
+pt.Format(ptime.LongDate)            // یک‌شنبه 11 بهمن 1394
+pt.TimeFormat("2 Jan 2006")          // 11 بهمن 1394
 ```
 
-6- Format the time using [standard format](https://golang.org/src/time/format.go).
+Formatting into an existing buffer avoids the string allocation:
 
 ```go
-pt := ptime.Date(1394, 7, 2, 14, 7, 8, 0, Iran())
-
-fmt.Println(pt.TimeFormat("2 Jan 2006")) // output: 2 مهر 1394
-
-// 2006        four digit year (e.g. 1399)
-// 06          two digit year (e.g. 99)
-// 01          two digit month (e.g. 01)
-// 1           one digit month (e.g. 1)
-// Jan         month name (e.g. آذر)
-// January     month name (e.g. آذر)
-// 02          two digit day (e.g. 07)
-// 2           one digit day (e.g. 7)
-// _2          right justified two character day (e.g.  7)
-// Mon         weekday (e.g. شنبه)
-// Monday      weekday (e.g. شنبه)
-// 03          two digit 12 hour format (e.g. 03)
-// 3           one digit 12 hour format (e.g. 3)
-// 15          two digit 24 hour format (e.g. 15)
-// 04          two digit minute (e.g. 03)
-// 4           one digit minute (e.g. 03)
-// 05          two digit minute (e.g. 09)
-// 5           one digit minute (e.g. 9)
-// .000        millisecond (e.g. .120)
-// .000000     microsecond (e.g. .123400)
-// .000000000  nanosecond (e.g. .123456000)
-// .999        trailing zeros removed millisecond (e.g. .12)
-// .999999     trailing zeros removed microsecond (e.g. .1234)
-// .999999999  trailing zeros removed nanosecond (e.g. .123456)
-// PM          full 12-Hour marker (e.g. قبل از ظهر)
-// pm          short 12-Hour marker (e.g. ق.ظ)
-// MST         the name of location
-// -0700       zone offset (e.g. +0330)
-// -07         zone offset (e.g. +03)
-// -07:00      zone offset (e.g. +03:30)
-// Z0700       zone offset (e.g. +0330)
-// Z07:00      zone offset (e.g. +03:30)
+buf = pt.AppendFormat(buf[:0], ptime.DateTime)
 ```
+
+### Parsing
+
+```go
+pt, err := ptime.Parse(ptime.DateTime, "1394-07-02 12:59:59")
+if err != nil {
+    // *ptime.ParseError reports which layout element failed and where
+}
+
+pt, err = ptime.ParseInLocation("d MMM yyyy", "2 مهر 1394", ptime.Iran())
+pt, err = ptime.ParseTimeFormat("2006/01/02", "1394/07/02")
+```
+
+Without a time zone in the value, `Parse` returns a time in UTC — use `ParseInLocation` to pick a different default.
+
+### JSON
+
+```go
+type Event struct {
+    Name string     `json:"name"`
+    At   ptime.Time `json:"at"`
+}
+
+json.Marshal(Event{
+    Name: "نوروز",
+    At:   ptime.Date(1404, ptime.Farvardin, 1, 0, 0, 0, 0, ptime.Iran()),
+})
+// {"name":"نوروز","at":"1404-01-01T00:00:00+03:30"}
+```
+
+The zero `Time` marshals to `null` and back.
+
+### SQL
+
+```go
+var at ptime.Time
+
+// Value() stores a Gregorian timestamp, Scan() reads one back.
+db.QueryRow("SELECT created_at FROM events WHERE id = $1", id).Scan(&at)
+db.Exec("INSERT INTO events (created_at) VALUES ($1)", at)
+```
+
+## Predefined layouts
+
+| Constant      | Layout                           | Example                              |
+|---------------|----------------------------------|--------------------------------------|
+| `RFC3339`     | `yyyy-MM-ddTHH:mm:ssZ`           | `1394-07-02T12:59:59+03:30`          |
+| `RFC3339Nano` | `yyyy-MM-ddTHH:mm:ss.999999999Z` | `1394-07-02T12:59:59.05206509+03:30` |
+| `DateTime`    | `yyyy-MM-dd HH:mm:ss`            | `1394-07-02 12:59:59`                |
+| `DateOnly`    | `yyyy-MM-dd`                     | `1394-07-02`                         |
+| `TimeOnly`    | `HH:mm:ss`                       | `12:59:59`                           |
+| `Kitchen`     | `h:mm a`                         | `12:59 ب.ظ`                          |
+| `LongDate`    | `E d MMM yyyy`                   | `پنج‌شنبه 2 مهر 1394`                |
+
+## Layout reference
+
+<details>
+<summary><code>Format</code> and <code>Parse</code> — pattern letters</summary>
+
+| Pattern | Meaning | Example |
+|---------|---------|---------|
+| `yyyy`, `yyy`, `y` | year | `1394` |
+| `yy` | 2-digit year | `94` |
+| `MMM` | Persian month name | `فروردین` |
+| `MMI` | Dari month name | `حمل` |
+| `MM` | 2-digit month | `01` |
+| `M` | month | `1` |
+| `dd` | 2-digit day of month | `01` |
+| `d` | day of month | `1` |
+| `E` | Persian weekday name | `شنبه` |
+| `e` | short weekday name | `ش` |
+| `A` | 12-hour marker | `قبل از ظهر` |
+| `a` | short 12-hour marker | `ق.ظ` |
+| `HH` / `H` | hour `[00-23]` / `[0-23]` | `09` / `9` |
+| `kk` / `k` | hour `[01-24]` / `[1-24]` | `09` / `9` |
+| `hh` / `h` | hour `[01-12]` / `[1-12]` | `09` / `9` |
+| `KK` / `K` | hour `[00-11]` / `[0-11]` | `09` / `9` |
+| `mm` / `m` | minute | `05` / `5` |
+| `ss` / `s` | second | `05` / `5` |
+| `n` | part of the day | `صبح` |
+| `ns` | nanosecond, as a plain number | `52065090` |
+| `S` | 3-digit millisecond | `052` |
+| `.000` … `.000000000` | fractional second, fixed width | `.052` |
+| `.999` … `.999999999` | fractional second, trailing zeros removed | `.052` |
+| `D` / `RD` | day of year / remaining days of year | `186` |
+| `w` / `rw` | week of year / remaining weeks of year | `46` |
+| `W` / `rd` | week of month / remaining days of month | `3` |
+| `z` | time zone name | `Asia/Tehran` |
+| `Z` | time zone offset | `+03:30` |
+
+Anything else is copied verbatim. Computed fields (`D`, `RD`, `w`, `rw`, `W`, `rd`, `E`, `e`, `n`) are matched and discarded when parsing.
+
+</details>
+
+<details>
+<summary><code>TimeFormat</code> and <code>ParseTimeFormat</code> — reference time</summary>
+
+| Layout | Meaning | Example |
+|--------|---------|---------|
+| `2006` / `06` | year | `1394` / `94` |
+| `01` / `1` | month | `07` / `7` |
+| `Jan`, `January` | month name | `مهر` |
+| `02` / `2` / `_2` | day of month | `07` / `7` / `" 7"` |
+| `Mon` / `Monday` | weekday | `ش` / `شنبه` |
+| `Morning` | part of the day | `صبح` |
+| `15` | hour `[00-23]` | `14` |
+| `03` / `3` | hour `[01-12]` | `02` / `2` |
+| `04` / `4` | minute | `07` / `7` |
+| `05` / `5` | second | `08` / `8` |
+| `.000` … `.999999999` | fractional second | `.052` |
+| `PM` / `pm` | 12-hour marker | `بعد از ظهر` / `ب.ظ` |
+| `MST` | time zone name | `Asia/Tehran` |
+| `-0700`, `-07`, `-07:00`, `Z0700`, `Z07:00` | time zone offset | `+0330` |
+
+</details>
+
+## Locations
+
+`ptime.Iran()` and `ptime.Afghanistan()` return `Asia/Tehran` and `Asia/Kabul`. Both are cached after the first lookup and fall back to a fixed offset when the host has no time zone database.
+
+Month names follow the location: `TimeFormat` renders Dari names (`میزان`) in `Asia/Kabul` and Iranian names (`مهر`) everywhere else. `Format` chooses explicitly, with `MMM` for Iranian and `MMI` for Dari.
 
 ## Limitations
 
-- The minimum value of Gregorian year is 1097, otherwise a zero instance of `ptime.Time` is returned.
+- The oldest representable Gregorian year is **1097**; `New` returns the zero `Time` for anything older.
+- Leap years use the arithmetic 33-year cycle rule, which matches the official Iranian calendar over the range the package targets.
+
+## Development
+
+```bash
+make test     # go test ./... -race -cover
+make lint     # golangci-lint
+make bench    # benchmarks
+make fuzz     # a short fuzzing pass over the parser
+make cover    # HTML coverage report
+```
 
 ## Documentation
 
-Please read [the documentation](https://pkg.go.dev/github.com/yaa110/go-persian-calendar) for more information about methods and functionality available for `ptime.Time`, `ptime.Month`, `ptime.Weekday` and `ptime.AmPm`.
+Full API documentation lives on [pkg.go.dev](https://pkg.go.dev/github.com/amiranmanesh/go-persian-calendar). Longer guides are in the [wiki](https://github.com/amiranmanesh/go-persian-calendar/wiki).
+
+## Contributing
+
+Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Credits
+
+Originally created by [Navid Fathollahzade](https://github.com/yaa110) as [yaa110/go-persian-calendar](https://github.com/yaa110/go-persian-calendar), and maintained here with a modernized API, a parser, encoding support and a reworked toolchain.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
