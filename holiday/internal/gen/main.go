@@ -19,6 +19,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -145,12 +146,19 @@ func run(from, to int, out string, dry bool, timeout time.Duration) error {
 		Years: years,
 	}
 
-	encoded, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return fmt.Errorf("encoding: %w", err)
+	// The stamp only moves when the content does. Otherwise every scheduled
+	// run would differ from the committed file by its date alone and open a
+	// pull request with nothing to review.
+	if keepStamp(out, &data) {
+		fmt.Fprintf(os.Stderr, "gen: %s is already up to date, confirmed through %d\n", out, confirmed)
+
+		return nil
 	}
 
-	encoded = append(encoded, '\n')
+	encoded, err := encode(data)
+	if err != nil {
+		return err
+	}
 
 	if dry {
 		fmt.Fprintf(os.Stderr, "gen: dry run, %d bytes not written\n", len(encoded))
@@ -165,6 +173,37 @@ func run(from, to int, out string, dry bool, timeout time.Duration) error {
 	fmt.Fprintf(os.Stderr, "gen: wrote %s, confirmed through %d\n", out, confirmed)
 
 	return nil
+}
+
+// keepStamp reports whether the file at path already holds data apart from its
+// stamp. When it does not, data keeps today's stamp; when it does, there is
+// nothing to write.
+func keepStamp(path string, data *holiday.Overrides) bool {
+	previous, err := os.ReadFile(path) //nolint:gosec // the output path is a flag of a build tool
+	if err != nil {
+		return false
+	}
+
+	var old holiday.Overrides
+	if json.Unmarshal(previous, &old) != nil || old.UpdatedAt == "" {
+		return false
+	}
+
+	candidate := *data
+	candidate.UpdatedAt = old.UpdatedAt
+
+	encoded, err := encode(candidate)
+
+	return err == nil && bytes.Equal(encoded, previous)
+}
+
+func encode(data holiday.Overrides) ([]byte, error) {
+	encoded, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("encoding: %w", err)
+	}
+
+	return append(encoded, '\n'), nil
 }
 
 var errNotPublished = errors.New("not published")

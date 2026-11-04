@@ -21,15 +21,15 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        go: ["1.21", "1.22", "1.23", "1.24", "1.25"]
+        go: ["1.21", "1.22", "1.23", "1.24", "1.25", "1.26", "1.27"]
         include:
           - os: macos-latest
-            go: "1.25"
+            go: "1.27"
           - os: windows-latest
-            go: "1.25"
+            go: "1.27"
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go }}
           check-latest: true
@@ -38,8 +38,8 @@ jobs:
       - run: go test ./... -race -shuffle=on -coverprofile=coverage.out -covermode=atomic
 
       - name: Upload coverage
-        if: matrix.os == 'ubuntu-latest' && matrix.go == '1.25'
-        uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-latest' && matrix.go == '1.27'
+        uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage.out
@@ -49,10 +49,10 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
-          go-version: "1.25"
+          go-version: "1.27"
           check-latest: true
       - run: make lint
 
@@ -60,23 +60,23 @@ jobs:
     name: govulncheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
-          go-version: "1.25"
+          go-version: "1.27"
           check-latest: true
       - uses: golang/govulncheck-action@v1
         with:
-          go-version-input: "1.25"
+          go-version-input: "1.27"
 
   fuzz:
     name: fuzz (smoke)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
-          go-version: "1.25"
+          go-version: "1.27"
           check-latest: true
       - run: make fuzz FUZZTIME=20s
 
@@ -84,10 +84,10 @@ jobs:
     name: go.mod is tidy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
-          go-version: "1.25"
+          go-version: "1.27"
           check-latest: true
       - run: go mod tidy
       - name: Fail if go.mod or go.sum changed
@@ -97,6 +97,6 @@ jobs:
     name: published data matches the embedded data
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Compare the embedded file with the one served from the site
         run: diff -u holiday/data/iran.json docs/data/v1/iran.json

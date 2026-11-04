@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The holiday reconciler leaves `updatedAt` alone when nothing else in the data
+  moved, so the monthly workflow no longer opens a pull request that differs
+  only by its date.
+- CI now tests Go 1.26 and 1.27 and runs its tooling on 1.27; the pinned linter
+  moved to golangci-lint 2.15 and the GitHub Actions to their current majors.
+
 ## [1.5.0] - 2026-08-11
 
 ### Added
